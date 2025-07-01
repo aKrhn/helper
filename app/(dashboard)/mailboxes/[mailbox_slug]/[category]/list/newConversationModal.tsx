@@ -268,6 +268,7 @@ const CcAndBccInfo = ({
             onModEnter={onModEnter}
           />
           <button
+            type="button"
             onClick={() => {
               setCcVisible(false);
               onChange({ cc: "" });
@@ -289,6 +290,7 @@ const CcAndBccInfo = ({
             onModEnter={onModEnter}
           />
           <button
+            type="button"
             onClick={() => {
               setBccVisible(false);
               onChange({ bcc: "" });
