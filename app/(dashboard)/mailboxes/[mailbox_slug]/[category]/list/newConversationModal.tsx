@@ -1,6 +1,6 @@
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
 import {
   FAILED_ATTACHMENTS_TOOLTIP_MESSAGE,
   useSendDisabled,
