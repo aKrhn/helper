@@ -1,5 +1,5 @@
 import { isMacOS } from "@tiptap/core";
-import { CornerUpLeft } from "lucide-react";
+import { CornerUpLeft, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useConversationContext } from "@/app/(dashboard)/mailboxes/[mailbox_slug]/[category]/conversation/conversationContext";
 import { EmailSignature } from "@/app/(dashboard)/mailboxes/[mailbox_slug]/[category]/emailSignature";
@@ -420,21 +420,37 @@ export const MessageActions = () => {
         onToggleCc={onToggleCc}
         inputRef={commandInputRef}
       />
-      <div className={cn("shrink-0 grid grid-cols-2 gap-2 mt-4", (!showCc || showCommandBar) && "hidden")}>
-        <LabeledInput
-          ref={ccRef}
-          name="CC"
-          value={draftedEmail.cc}
-          onChange={(cc) => updateDraftedEmail({ cc })}
-          onModEnter={() => {}}
-        />
-        <LabeledInput
-          ref={bccRef}
-          name="BCC"
-          value={draftedEmail.bcc}
-          onChange={(bcc) => updateDraftedEmail({ bcc })}
-          onModEnter={() => {}}
-        />
+      <div className={cn("shrink-0 mt-4", (!showCc || showCommandBar) && "hidden")}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-muted-foreground">Additional recipients</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setShowCc(false);
+              setDraftedEmail((prev) => ({ ...prev, cc: "", bcc: "", modified: true }));
+            }}
+            className="h-6 w-6 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <LabeledInput
+            ref={ccRef}
+            name="CC"
+            value={draftedEmail.cc}
+            onChange={(cc) => updateDraftedEmail({ cc })}
+            onModEnter={() => {}}
+          />
+          <LabeledInput
+            ref={bccRef}
+            name="BCC"
+            value={draftedEmail.bcc}
+            onChange={(bcc) => updateDraftedEmail({ bcc })}
+            onModEnter={() => {}}
+          />
+        </div>
       </div>
       <TipTapEditor
         ref={editorRef}

@@ -1,5 +1,6 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
 import {
   FAILED_ATTACHMENTS_TOOLTIP_MESSAGE,
   useSendDisabled,
@@ -173,6 +174,7 @@ const NewConversationModal = ({ mailboxSlug, conversationSlug, onSubmit }: Props
         />
         <TipTapEditor
           ref={editorRef}
+          className="max-h-60 overflow-y-auto"
           ariaLabel="Message"
           placeholder="Type your message here..."
           defaultContent={messageMemoized}
@@ -257,23 +259,45 @@ const CcAndBccInfo = ({
         </span>
       ) : null}
       {ccVisible && (
-        <LabeledInput
-          ref={ccRef}
-          name="CC"
-          value={newConversationInfo.cc}
-          onChange={(cc) => onChange({ cc })}
-          onModEnter={onModEnter}
-        />
+        <div className="relative">
+          <LabeledInput
+            ref={ccRef}
+            name="CC"
+            value={newConversationInfo.cc}
+            onChange={(cc) => onChange({ cc })}
+            onModEnter={onModEnter}
+          />
+          <button
+            onClick={() => {
+              setCcVisible(false);
+              onChange({ cc: "" });
+            }}
+            className="absolute right-2 top-2 p-1 hover:bg-muted rounded"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
       )}
       {!ccVisible && bccVisible ? <CcButton /> : null}
       {bccVisible && (
-        <LabeledInput
-          ref={bccRef}
-          name="BCC"
-          value={newConversationInfo.bcc}
-          onChange={(bcc) => onChange({ bcc })}
-          onModEnter={onModEnter}
-        />
+        <div className="relative">
+          <LabeledInput
+            ref={bccRef}
+            name="BCC"
+            value={newConversationInfo.bcc}
+            onChange={(bcc) => onChange({ bcc })}
+            onModEnter={onModEnter}
+          />
+          <button
+            onClick={() => {
+              setBccVisible(false);
+              onChange({ bcc: "" });
+            }}
+            className="absolute right-2 top-2 p-1 hover:bg-muted rounded"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
       )}
       {!bccVisible && ccVisible ? <BccButton /> : null}
     </div>
