@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { toast } from "@/components/hooks/use-toast";
-import { useSavingIndicator } from "@/components/hooks/useSavingIndicator";
 import { SavingIndicator } from "@/components/savingIndicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDebouncedCallback } from "@/components/useDebouncedCallback";
 import { useOnChange } from "@/components/useOnChange";
+import { useMutationWithToast } from "@/lib/hooks/useMutationWithToast";
+import { useSettingsMutation } from "@/lib/hooks/useSettingsMutation";
 import { RouterOutputs } from "@/trpc";
 import { api } from "@/trpc/react";
 import SectionWrapper from "../sectionWrapper";
@@ -22,25 +23,16 @@ type AutoCloseUpdates = {
 export default function AutoCloseSetting({ mailbox }: { mailbox: RouterOutputs["mailbox"]["get"] }) {
   const [isEnabled, setIsEnabled] = useState(mailbox.autoCloseEnabled);
   const [daysOfInactivity, setDaysOfInactivity] = useState(mailbox.autoCloseDaysOfInactivity?.toString() ?? "30");
-  const savingIndicator = useSavingIndicator();
+
   const utils = api.useUtils();
 
-  const { mutate: update } = api.mailbox.update.useMutation({
-    onSuccess: () => {
-      utils.mailbox.get.invalidate({ mailboxSlug: mailbox.slug });
-      savingIndicator.setState("saved");
-    },
-    onError: (error) => {
-      savingIndicator.setState("error");
-      toast({
-        title: "Error updating auto-close settings",
-        description: error.message,
-      });
-    },
+  const { save: update, savingIndicator } = useSettingsMutation({
+    mutationFn: api.mailbox.update.useMutation,
+    errorTitle: "Error updating auto-close settings",
+    invalidateQueries: [{ query: utils.mailbox.get, params: { mailboxSlug: mailbox.slug } }],
   });
 
   const save = useDebouncedCallback(() => {
-    savingIndicator.setState("saving");
     update({
       mailboxSlug: mailbox.slug,
       autoCloseEnabled: isEnabled,
@@ -52,19 +44,13 @@ export default function AutoCloseSetting({ mailbox }: { mailbox: RouterOutputs["
     save();
   }, [isEnabled, daysOfInactivity]);
 
-  const { mutate: runAutoClose, isPending: isAutoClosePending } = api.mailbox.autoClose.useMutation({
-    onSuccess: () => {
-      toast({
-        title: "Auto-close triggered",
-        description: "The auto-close job has been triggered successfully.",
-      });
+  const { mutate: runAutoClose, isPending: isAutoClosePending } = useMutationWithToast({
+    mutationFn: api.mailbox.autoClose.useMutation,
+    onSuccess: {
+      message: "The auto-close job has been triggered successfully.",
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: {
+      fallbackMessage: "running auto-close",
     },
   });
 

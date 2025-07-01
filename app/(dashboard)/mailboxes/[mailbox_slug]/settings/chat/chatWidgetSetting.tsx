@@ -4,8 +4,6 @@ import { ExternalLink, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShowChatWidget } from "@/app/(dashboard)/mailboxes/[mailbox_slug]/clientLayout";
 import { getBaseUrl, getMarketingSiteUrl } from "@/components/constants";
-import { toast } from "@/components/hooks/use-toast";
-import { useSavingIndicator } from "@/components/hooks/useSavingIndicator";
 import { SavingIndicator } from "@/components/savingIndicator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -17,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useDebouncedCallback } from "@/components/useDebouncedCallback";
 import { useOnChange } from "@/components/useOnChange";
 import { mailboxes } from "@/db/schema";
+import { useSettingsMutation } from "@/lib/hooks/useSettingsMutation";
 import { RouterOutputs } from "@/trpc";
 import { api } from "@/trpc/react";
 import SectionWrapper, { SwitchSectionWrapper } from "../sectionWrapper";
@@ -45,9 +44,6 @@ const ChatWidgetSetting = ({ mailbox }: { mailbox: RouterOutputs["mailbox"]["get
   );
   const [widgetHost, setWidgetHost] = useState(mailbox.widgetHost ?? "");
   const [isCopied, setIsCopied] = useState(false);
-  const chatVisibilitySaving = useSavingIndicator();
-  const hostUrlSaving = useSavingIndicator();
-  const emailResponseSaving = useSavingIndicator();
   const { showChatWidget, setShowChatWidget } = useShowChatWidget();
 
   useEffect(() => {
@@ -56,50 +52,26 @@ const ChatWidgetSetting = ({ mailbox }: { mailbox: RouterOutputs["mailbox"]["get
   }, [mode]);
 
   const utils = api.useUtils();
-  const { mutate: updateChatVisibility } = api.mailbox.update.useMutation({
-    onSuccess: () => {
-      utils.mailbox.get.invalidate({ mailboxSlug: mailbox.slug });
-      chatVisibilitySaving.setState("saved");
-    },
-    onError: (error) => {
-      chatVisibilitySaving.setState("error");
-      toast({
-        title: "Error updating chat visibility settings",
-        description: error.message,
-      });
-    },
+
+  const { save: updateChatVisibility, savingIndicator: chatVisibilitySaving } = useSettingsMutation({
+    mutationFn: api.mailbox.update.useMutation,
+    errorTitle: "Error updating chat visibility settings",
+    invalidateQueries: [{ query: utils.mailbox.get, params: { mailboxSlug: mailbox.slug } }],
   });
 
-  const { mutate: updateHostUrl } = api.mailbox.update.useMutation({
-    onSuccess: () => {
-      utils.mailbox.get.invalidate({ mailboxSlug: mailbox.slug });
-      hostUrlSaving.setState("saved");
-    },
-    onError: (error) => {
-      hostUrlSaving.setState("error");
-      toast({
-        title: "Error updating host URL",
-        description: error.message,
-      });
-    },
+  const { save: updateHostUrl, savingIndicator: hostUrlSaving } = useSettingsMutation({
+    mutationFn: api.mailbox.update.useMutation,
+    errorTitle: "Error updating host URL",
+    invalidateQueries: [{ query: utils.mailbox.get, params: { mailboxSlug: mailbox.slug } }],
   });
 
-  const { mutate: updateEmailResponse } = api.mailbox.update.useMutation({
-    onSuccess: () => {
-      utils.mailbox.get.invalidate({ mailboxSlug: mailbox.slug });
-      emailResponseSaving.setState("saved");
-    },
-    onError: (error) => {
-      emailResponseSaving.setState("error");
-      toast({
-        title: "Error updating email response settings",
-        description: error.message,
-      });
-    },
+  const { save: updateEmailResponse, savingIndicator: emailResponseSaving } = useSettingsMutation({
+    mutationFn: api.mailbox.update.useMutation,
+    errorTitle: "Error updating email response settings",
+    invalidateQueries: [{ query: utils.mailbox.get, params: { mailboxSlug: mailbox.slug } }],
   });
 
   const saveChatVisibility = useDebouncedCallback(() => {
-    chatVisibilitySaving.setState("saving");
     updateChatVisibility({
       mailboxSlug: mailbox.slug,
       widgetDisplayMode: mode,
@@ -108,7 +80,6 @@ const ChatWidgetSetting = ({ mailbox }: { mailbox: RouterOutputs["mailbox"]["get
   }, 500);
 
   const saveHostUrl = useDebouncedCallback(() => {
-    hostUrlSaving.setState("saving");
     updateHostUrl({
       mailboxSlug: mailbox.slug,
       widgetHost: widgetHost || null,
@@ -116,7 +87,6 @@ const ChatWidgetSetting = ({ mailbox }: { mailbox: RouterOutputs["mailbox"]["get
   }, 500);
 
   const saveEmailResponse = useDebouncedCallback(() => {
-    emailResponseSaving.setState("saving");
     updateEmailResponse({
       mailboxSlug: mailbox.slug,
       preferences: {

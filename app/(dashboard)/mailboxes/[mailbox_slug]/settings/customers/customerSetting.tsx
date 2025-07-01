@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "@/components/hooks/use-toast";
-import { useSavingIndicator } from "@/components/hooks/useSavingIndicator";
 import { SavingIndicator } from "@/components/savingIndicator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -10,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useDebouncedCallback } from "@/components/useDebouncedCallback";
 import { useOnChange } from "@/components/useOnChange";
+import { useSettingsMutation } from "@/lib/hooks/useSettingsMutation";
 import { RouterOutputs } from "@/trpc";
 import { api } from "@/trpc/react";
 import { SlackChannels } from "../integrations/slackSetting";
@@ -25,33 +24,28 @@ const CustomerSetting = ({ mailbox }: { mailbox: RouterOutputs["mailbox"]["get"]
   const [isEnabled, setIsEnabled] = useState(mailbox.vipThreshold !== null);
   const [threshold, setThreshold] = useState(mailbox.vipThreshold?.toString() ?? "100");
   const [responseHours, setResponseHours] = useState(mailbox.vipExpectedResponseHours?.toString() ?? "");
-  const savingIndicator = useSavingIndicator();
+
   const utils = api.useUtils();
 
-  const { mutate: update } = api.mailbox.update.useMutation({
-    onSuccess: () => {
-      utils.mailbox.get.invalidate({ mailboxSlug: mailbox.slug });
-      savingIndicator.setState("saved");
-    },
-    onError: (error) => {
-      savingIndicator.setState("error");
-      toast({
-        title: "Error updating VIP settings",
-        description: error.message,
-      });
-    },
+  const {
+    mutate: update,
+    save: saveSettings,
+    savingIndicator,
+  } = useSettingsMutation({
+    mutationFn: api.mailbox.update.useMutation,
+    errorTitle: "Error updating VIP settings",
+    invalidateQueries: [{ query: utils.mailbox.get, params: { mailboxSlug: mailbox.slug } }],
   });
 
   const save = useDebouncedCallback(() => {
-    savingIndicator.setState("saving");
     if (isEnabled) {
-      update({
+      saveSettings({
         mailboxSlug: mailbox.slug,
         vipThreshold: Number(threshold),
         vipExpectedResponseHours: responseHours ? Number(responseHours) : null,
       });
     } else {
-      update({
+      saveSettings({
         mailboxSlug: mailbox.slug,
         vipThreshold: null,
         vipChannelId: null,

@@ -2,35 +2,26 @@
 
 import { useState } from "react";
 import { triggerConfetti } from "@/components/confetti";
-import { toast } from "@/components/hooks/use-toast";
-import { useSavingIndicator } from "@/components/hooks/useSavingIndicator";
 import { SavingIndicator } from "@/components/savingIndicator";
 import { Button } from "@/components/ui/button";
+import { useSettingsMutation } from "@/lib/hooks/useSettingsMutation";
 import { RouterOutputs } from "@/trpc";
 import { api } from "@/trpc/react";
 import { SwitchSectionWrapper } from "../sectionWrapper";
 
 const ConfettiSetting = ({ mailbox }: { mailbox: RouterOutputs["mailbox"]["get"] }) => {
   const [confettiEnabled, setConfettiEnabled] = useState(mailbox.preferences?.confetti ?? false);
-  const savingIndicator = useSavingIndicator();
+
   const utils = api.useUtils();
-  const { mutate: update } = api.mailbox.update.useMutation({
-    onSuccess: () => {
-      utils.mailbox.get.invalidate({ mailboxSlug: mailbox.slug });
-      savingIndicator.setState("saved");
-    },
-    onError: (error) => {
-      savingIndicator.setState("error");
-      toast({
-        title: "Error updating preferences",
-        description: error.message,
-      });
-    },
+
+  const { save: update, savingIndicator } = useSettingsMutation({
+    mutationFn: api.mailbox.update.useMutation,
+    errorTitle: "Error updating preferences",
+    invalidateQueries: [{ query: utils.mailbox.get, params: { mailboxSlug: mailbox.slug } }],
   });
 
   const handleSwitchChange = (checked: boolean) => {
     setConfettiEnabled(checked);
-    savingIndicator.setState("saving");
     update({ mailboxSlug: mailbox.slug, preferences: { confetti: checked } });
   };
 
