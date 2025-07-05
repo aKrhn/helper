@@ -173,7 +173,9 @@ export const List = () => {
               title: `${selectedCount} conversation${selectedCount === 1 ? "" : "s"} ${assignText}`,
             });
           } else {
-            toast({ title: "Starting assignment, refresh to see status." });
+            toast({ 
+              title: `Starting assignment of ${selectedCount} conversation${selectedCount === 1 ? "" : "s"}, refresh to see status.` 
+            });
           }
         },
         onError: () => {
